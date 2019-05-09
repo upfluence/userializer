@@ -1,6 +1,7 @@
 require 'oj'
 require 'active_support/inflector/methods'
 require 'userializer/has_one'
+require 'userializer/has_many'
 
 module USerializer
   class BaseSerializer
@@ -64,8 +65,13 @@ module USerializer
     end
 
     def to_json
-      Oj.dump(h)
+      Oj.dump(to_hash, mode: :compat)
     end
+
+    def scope; @opts[:scope]; end
+    def object; @obj; end
+
+    def method_missing(mth); @obj.send(mth); end
 
     def initialize(obj, opts = {})
       @obj = obj

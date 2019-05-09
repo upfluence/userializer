@@ -18,7 +18,7 @@ module USerializer
         ActiveSupport::Inflector.underscore(obj_class.name).split('/').last
       ).to_sym
 
-      @serializer = opts[:each_serializer] || infered_serializer_class(
+      @serializer = opts[:each_serializer] || USerializer.infered_serializer_class(
         obj_class
       )
     end
@@ -39,7 +39,9 @@ module USerializer
     end
 
     def to_json
-      Oj.dump(h)
+      Oj.dump(to_hash, mode: :compat)
     end
+
+    def scope; @opts[:scope]; end
   end
 end

@@ -1,5 +1,7 @@
 module USerializer
   class HasMany
+    attr_reader :key
+
     def initialize(key, opts)
       @key = key
 
