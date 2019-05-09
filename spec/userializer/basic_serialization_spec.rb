@@ -8,6 +8,12 @@ class FooSerializer < USerializer::BaseSerializer
   end
 end
 
+class FooCustomSerializer < USerializer::BaseSerializer
+  attributes :bar do |object, opts|
+    "#{object.bar} #{opts[:scope]}"
+  end
+end
+
 class Foo
   attr_accessor :id, :bar
 end
@@ -19,6 +25,14 @@ RSpec.describe USerializer::BaseSerializer do
     f.bar = 'bar'
 
     f
+  end
+
+  context 'custom attribute' do
+    it do
+      expect(FooCustomSerializer.new(f, scope: 'buz').to_hash).to eq(
+        foo: { id: 1, bar: 'bar buz' }
+      )
+    end
   end
 
   context 'carry the correct values' do

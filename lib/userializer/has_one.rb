@@ -7,18 +7,25 @@ module USerializer
       @root_key = opts[:root]&.to_sym
 
       @serializer = opts[:serializer]
+
+      @conditional_block = opts[:if] || proc { true }
     end
 
     attr_reader :id_key, :key
 
-    def merge_attributes(res, obj)
+    def merge_attributes(res, ser, opts)
+      return unless @conditional_block.call(ser.object, opts)
+
+      obj = ser.send(@key)
       res[@id_key] = obj&.id
     end
 
-    def merge_root(res, obj)
-      return if obj.nil?
+    def merge_root(res, ser, opts)
+      obj = ser.send(@key)
 
-      serializer(obj).merge_root(res, root_key(obj), false)
+      return if obj.nil? || !@conditional_block.call(ser.object, opts)
+
+      serializer(obj).merge_root(res, root_key(obj), false, opts)
     end
 
     private

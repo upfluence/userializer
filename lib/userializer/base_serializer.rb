@@ -2,76 +2,43 @@ require 'oj'
 require 'active_support/inflector/methods'
 require 'userializer/has_one'
 require 'userializer/has_many'
+require 'userializer/attribute'
 
 module USerializer
   class BaseSerializer
     class << self
-      def attributes(*keys)
-        @attrs ||= [:id]
-        @attrs += keys.map(&:to_sym)
-        @attrs.compact!
+      def inherited(subclass)
+        subclass.attrs = self.attrs || { id: Attribute.new(:id, {}, nil) }
+        subclass.relations = self.relations || {}
       end
 
-      def has_one(relation, opts = {})
-        @relations ||= []
-        @relations << HasOne.new(relation, opts)
+      def attributes(*attrs, &block)
+        attrs = attrs.first if attrs.first.class.is_a?(Array)
+        opts = attrs.last.is_a?(Hash) ? attrs.pop : {}
+
+        attrs.each { |attr| @attrs[attr] = Attribute.new(attr, opts, block) }
       end
 
-      def has_many(relation, opts = {})
-        @relations ||= []
-        @relations << HasMany.new(relation, opts)
+      def has_one(*attrs)
+        attrs = attrs.first if attrs.first.class.is_a?(Array)
+        opts = attrs.last.is_a?(Hash) ? attrs.pop : {}
+
+        attrs.each { |attr| @relations[attr] = HasOne.new(attr, opts) }
       end
 
-      attr_reader :attrs, :relations
-    end
+      def has_many(*attrs)
+        attrs = attrs.first if attrs.first.class.is_a?(Array)
+        opts = attrs.last.is_a?(Hash) ? attrs.pop : {}
 
-    def serializable_hash
-      res = {}
-
-      attribute_keys.each { |k| res[k] = fetch_obj(k) }
-      relations.each { |rel| rel.merge_attributes(res, fetch_obj(rel.key)) }
-
-      res
-    end
-
-    def merge_root(res, key, single)
-      if single
-        res[key] = serializable_hash
-      else
-        res[key] ||= []
-
-        id = @obj.id
-
-        if res[key].detect { |v| v[:id] == id }
-          return
-        else
-          res[key] << serializable_hash
-        end
+        attrs.each { |attr| @relations[attr] = HasMany.new(attr, opts) }
       end
 
-      relations.each do |rel|
-        rel.merge_root(res, fetch_obj(rel.key))
-      end
+      attr_accessor :attrs, :relations
     end
 
-    def to_hash
-      res = {}
+    attr_reader :obj, :meta, :opts
 
-      merge_root(res, @root_key, true)
-
-      res[:meta] = @meta if @meta
-
-      res
-    end
-
-    def to_json
-      Oj.dump(to_hash, mode: :compat)
-    end
-
-    def scope; @opts[:scope]; end
-    def object; @obj; end
-
-    def method_missing(mth); @obj.send(mth); end
+    alias object obj
 
     def initialize(obj, opts = {})
       @obj = obj
@@ -84,20 +51,61 @@ module USerializer
       ).split('/').last).to_sym
     end
 
-    private
+    def serializable_hash(opts)
+      res = {}
 
-    def fetch_obj(key)
-      self.class.method_defined?(key) ? send(key) : @obj.send(key)
+      attributes.each { |attr| attr.merge_attributes(res, self, opts) }
+      relations.each do |rel|
+        rel.merge_attributes(res, self, opts)
+      end
+
+      res
     end
 
-    def attribute_keys
-      @attributes ||= ((self.class.attrs || []) << :id).reject do |k|
-        @except.include?(k)
+    def merge_root(res, key, single, opts)
+      if single
+        res[key] = serializable_hash(opts)
+      else
+        res[key] ||= []
+
+        id = @obj.id
+
+        if res[key].detect { |v| id && v[:id] == id }
+          return
+        else
+          res[key] << serializable_hash(opts)
+        end
+      end
+
+      relations.each { |rel| rel.merge_root(res, self, opts) }
+    end
+
+    def to_hash
+      res = {}
+
+      merge_root(res, @root_key, true, @opts.slice(:scope))
+
+      res[:meta] = @meta if @meta
+
+      res
+    end
+
+    def to_json
+      Oj.dump(to_hash, mode: :compat)
+    end
+
+    def method_missing(mth); @obj.send(mth); end
+
+    private
+
+    def attributes
+      @attributes ||= (self.class.attrs || {}).values.reject do |attr|
+        @except.include?(attr.key)
       end
     end
 
     def relations
-      @relations ||= (self.class.relations || []).reject do |rel|
+      @relations ||= (self.class.relations || {}).values.reject do |rel|
         @except.include?(rel.key)
       end
     end

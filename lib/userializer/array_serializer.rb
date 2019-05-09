@@ -23,16 +23,16 @@ module USerializer
       )
     end
 
-    def merge_root(res)
+    def merge_root(res, opts)
       @objs.each do |obj|
-        @serializer.new(obj, @opts).merge_root(res, @root_key, false)
+        @serializer.new(obj, @opts).merge_root(res, @root_key, false, opts)
       end
     end
 
     def to_hash
       res = {}
 
-      merge_root(res)
+      merge_root(res, @opts)
       res[:meta] = @meta if @meta
 
       res
