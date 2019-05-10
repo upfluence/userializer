@@ -14,9 +14,10 @@ module USerializer
 
       raise HeterogeneousArray if clss.count > 1
 
-      @root_key = opts[:root] || ActiveSupport::Inflector.pluralize(
+      @root_key = opts[:root]
+      @root_key ||= ActiveSupport::Inflector.pluralize(
         ActiveSupport::Inflector.underscore(obj_class.name).split('/').last
-      ).to_sym
+      ).to_sym if obj_class
 
       @serializer = opts[:each_serializer] || USerializer.infered_serializer_class(
         obj_class
@@ -31,6 +32,8 @@ module USerializer
 
     def to_hash
       res = {}
+
+      res[@root_key] = [] if @root_key
 
       merge_root(res, @opts)
       res[:meta] = @meta if @meta
