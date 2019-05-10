@@ -7,7 +7,7 @@ module USerializer
 
   class << self
     def serializer_for(obj)
-      return nil if kls.nil?
+      return nil if obj.nil?
 
       infered_serializer_class(obj.class)
     end

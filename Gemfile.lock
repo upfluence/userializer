@@ -1,7 +1,7 @@
 PATH
   remote: .
   specs:
-    userializer (0.1.1)
+    userializer (0.1.2)
       activesupport
       oj
 
