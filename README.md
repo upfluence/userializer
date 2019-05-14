@@ -20,17 +20,40 @@ Or install it yourself as:
 
 ## Usage
 
-USerializer's DSL is relatively close to Active Model Serializer's (with
-handling of `has_one` and `has_many` relationships), while having
-a few additional features including:
-* Conditional handling of attributes
-* Inline attribute overriding
+USerializer's DSL is relatively close to Active Model Serializer's,
+while having a few additional features including:
+* Attributes Conditional Declaration
+* Attributes Inline Definition
 
-### Conditional handling of attributes
+### Attributes Conditional Declaration
 
-TODO
+USerializer allows you to dynamically decide wether an attribute should
+be serialized or not by passing its definition an `if` block as follows:
+```ruby
+attributes :conditional_attr, if: proc { |_, opts| ... }
+```
 
-### Inline attribute overriding
+Eg: Let's say you want to serialize an `Order` object but want to
+include its `price` only if it's superior to *10*, your serializer
+would look like the following:
+```ruby
+class Order < ActiveRecord::Base
+  def price
+    10
+  end
+end
+
+class OrderSerializer < USerializer::BaseSerializer
+  attributes :price, if: proc do |obj, _|
+    obj.price > 10
+  end
+end
+```
+
+In that case for example, the `price` attribute would be omitted from
+the final response.
+
+### Attributes Inline Definition
 
 Using AMS, the only way to rewrite an attribute prior to serialization
 is to override it using a method with the same name, leading to
@@ -67,7 +90,6 @@ end
 
 Our `random_attr` serialization would then looks like this with
 USerializer:
-
 ```ruby
 class MyObjectSerializer < USerializer::BaseSerializer
   attributes :random_attr do |object, _|
