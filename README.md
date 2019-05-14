@@ -20,7 +20,63 @@ Or install it yourself as:
 
 ## Usage
 
-TODO: Write usage instructions here
+USerializer's DSL is relatively close to Active Model Serializer's (with
+handling of `has_one` and `has_many` relationships), while having
+a few additional features including:
+* Conditional handling of attributes
+* Inline attribute overriding
+
+### Conditional handling of attributes
+
+TODO
+
+### Inline attribute overriding
+
+Using AMS, the only way to rewrite an attribute prior to serialization
+is to override it using a method with the same name, leading to
+something like this:
+```ruby
+class MyObject < ActiveRecord::Base
+  def random_attr
+    0
+  end
+end
+
+class MyObjectSerializer < ActiveModel::Serializer
+  attributes :random_attr
+
+  def random_attr
+    object.random_attr + 1
+  end
+end
+```
+
+While this code works perfectly, it pushes the serialized attribute
+value definition back from its declaration, causing developers to lose
+focus when listing their serialized attributes because the overriding is
+done farther.
+
+With USerializer, all of this is done in an inline way, so that you can
+override the attribute's value while declaring using a block as
+follows:
+```ruby
+attributes :your_attribute do |object, _|
+  ...
+end
+```
+
+Our `random_attr` serialization would then looks like this with
+USerializer:
+
+```ruby
+class MyObjectSerializer < USerializer::BaseSerializer
+  attributes :random_attr do |object, _|
+    object.random_attr + 1
+  end
+end
+```
+
+Way nicer, right?
 
 ## Development
 
