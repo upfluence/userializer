@@ -100,6 +100,73 @@ end
 
 Way nicer, right?
 
+### Relationships
+
+Just like AMS, USerializer supports `has_one` and `has_many`
+relationships
+
+### Serialized Output
+
+The following outputs will be based an on our `Order` object in
+different situations:
+
+* Order is serialized without any relationships:
+```json
+{
+  "order": {
+    "id": 1,
+    "attr_1": "value_1",
+    "attr_2": "value_2",
+    "attr_3": "value_3",
+  }
+}
+```
+
+* Order has a `has_one` relationship with a `Client` model
+```json
+{
+  "clients": [
+    {
+      "id": 4,
+      "name": "userializer client",
+      ...
+    }
+  ],
+  "order": {
+    "id": 1,
+    "attr_1": "value_1",
+    "attr_2": "value_2",
+    "attr_3": "value_3",
+    "client_id": 4
+  }
+}
+```
+
+* Order has a `has_many` relationship with an `Article` model
+```json
+{
+  "articles": [
+    {
+      "id": 1,
+      "name": "Article #1",
+      ...
+    },
+    {
+      "id": 1,
+      "name": "Article #2",
+      ...
+    }
+  ],
+  "order": {
+    "id": 1,
+    "attr_1": "value_1",
+    "attr_2": "value_2",
+    "attr_3": "value_3",
+    "article_ids": [1, 2]
+  }
+}
+```
+
 ## Development
 
 After checking out the repo, run `bin/setup` to install dependencies. Then, run `rake spec` to run the tests. You can also run `bin/console` for an interactive prompt that will allow you to experiment.
