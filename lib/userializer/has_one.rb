@@ -7,7 +7,7 @@ module USerializer
       @root_key = opts[:root]&.to_sym
 
       @serializer = opts[:serializer]
-
+      @embed_key = opts[:embed_key] || :id
       @conditional_block = opts[:if] || proc { true }
     end
 
@@ -17,7 +17,7 @@ module USerializer
       return unless @conditional_block.call(ser.object, opts)
 
       obj = ser.send(@key)
-      res[@id_key] = obj&.id
+      res[@id_key] = obj.nil? ? nil : obj.send(@embed_key)
     end
 
     def merge_root(res, ser, opts)

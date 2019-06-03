@@ -41,6 +41,10 @@ module HasOneTesting
     has_one :foo, serializer: FooNestedSerializer
   end
 
+  class BarEmbedKeySerializer< USerializer::BaseSerializer
+    has_one :foo, serializer: FooSerializer, embed_key: :biz
+  end
+
   class Biz
     attr_accessor :id
   end
@@ -59,6 +63,7 @@ RSpec.describe USerializer::BaseSerializer do
     f = HasOneTesting::Foo.new
     f.id = 1
     f.bar = 'bar'
+    f.biz = 'buz'
 
     b = HasOneTesting::Bar.new
     b.foo = f
@@ -97,6 +102,14 @@ RSpec.describe USerializer::BaseSerializer do
     it do
       expect(HasOneTesting::BarExceptSerializer.new(b).to_hash).to eq(
         bar: { id: 2, foo_id: 1 }, foos: [id: 1]
+      )
+    end
+  end
+
+  context 'embed key' do
+    it do
+      expect(HasOneTesting::BarEmbedKeySerializer.new(b).to_hash).to eq(
+        bar: { id: 2, foo_id: 'buz' }, foos: [{ bar: 'bar', id: 1 }]
       )
     end
   end
