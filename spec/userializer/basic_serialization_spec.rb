@@ -16,6 +16,12 @@ end
 
 class Foo
   attr_accessor :id, :bar
+
+  attr_accessor :bazs
+end
+
+class FooSubSerializer < FooSerializer
+  has_many :bazs
 end
 
 RSpec.describe USerializer::BaseSerializer do
@@ -25,6 +31,20 @@ RSpec.describe USerializer::BaseSerializer do
     f.bar = 'bar'
 
     f
+  end
+
+  context 'does not carry inherited fields' do
+    it do
+      expect(FooSerializer.new(f).to_hash).to eq(
+        foo: { id: 1, bar: 'bar', buz: 'biz' }
+      )
+    end
+
+    it do
+      expect(FooSubSerializer.new(f).to_hash).to eq(
+        foo: { id: 1, bar: 'bar', buz: 'biz', baz_ids: [] }
+      )
+    end
   end
 
   context 'custom attribute' do

@@ -8,8 +8,8 @@ module USerializer
   class BaseSerializer
     class << self
       def inherited(subclass)
-        subclass.attrs = self.attrs || { id: Attribute.new(:id, {}, nil) }
-        subclass.relations = self.relations || {}
+        subclass.attrs = self.attrs.dup || { id: Attribute.new(:id, {}, nil) }
+        subclass.relations = self.relations.dup || {}
       end
 
       def attributes(*attrs, &block)
