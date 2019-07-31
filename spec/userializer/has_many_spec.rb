@@ -3,7 +3,7 @@ require 'spec_helper'
 module HasManyTesting
   class Collection < Array
     def evens
-      self.select { |i| i.id % 2 == 0 }
+      select { |i| i.id.even? }
     end
   end
 
