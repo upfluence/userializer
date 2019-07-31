@@ -1,0 +1,18 @@
+version: 2
+jobs:
+  run_tests:
+    docker:
+      - image: circleci/ruby:2.4.1
+
+    working_directory: ~/userializer
+
+    steps:
+      - checkout
+      - run: bundle install --path=vendor/bundle
+      - run: bundle exec rspec --color --require spec_helper --format progress spec
+
+workflows:
+  version: 2
+  test:
+    jobs:
+      - run_tests
