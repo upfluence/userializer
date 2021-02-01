@@ -6,7 +6,14 @@ module USerializer
       @id_key = "#{key}_id".to_sym
       @root_key = opts[:root]&.to_sym
 
-      @serializer = opts[:serializer]
+      serializer = opts[:serializer]
+
+      @serializer = if serializer&.is_a?(Proc)
+                      @serializer = serializer
+                    elsif serializer
+                      proc { serializer }
+                    end
+
       @embed_key = opts[:embed_key] || :id
       @conditional_block = opts[:if] || proc { true }
     end
@@ -25,13 +32,13 @@ module USerializer
 
       return if obj.nil? || !@conditional_block.call(ser.object, opts)
 
-      serializer(obj).merge_root(res, root_key(obj), false, opts)
+      serializer(obj, opts).merge_root(res, root_key(obj), false, opts)
     end
 
     private
 
-    def serializer(obj)
-      return @serializer.new(obj, @opts) if @serializer
+    def serializer(obj, opts)
+      return @serializer.call(obj, opts).new(obj, @opts) if @serializer
       return obj.serialize if obj.respond_to?(:serialize)
 
       USerializer.infered_serializer_class(obj.class).new(obj, @opts)

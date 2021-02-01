@@ -11,6 +11,9 @@ module HasManyTesting
     attributes :bar
   end
 
+  class EmptySerializer < USerializer::BaseSerializer
+  end
+
   class Foo
     attr_accessor :id, :bar
   end
@@ -21,6 +24,14 @@ module HasManyTesting
 
   class BarScopedSerializer < USerializer::BaseSerializer
     has_many :foos, scope: :evens
+  end
+
+  class BarProcSerializer < USerializer::BaseSerializer
+    CUSTOM_SERIALIZER = Proc.new do |_, opts|
+      opts[:scope].eql?(:none) ? EmptySerializer : FooSerializer
+    end
+
+    has_many :foos, each_serializer: CUSTOM_SERIALIZER
   end
 
   class Bar
@@ -52,6 +63,32 @@ RSpec.describe USerializer::BaseSerializer do
       expect(HasManyTesting::BarSerializer.new(b).to_hash).to eq(
         bar: { id: 2, foo_ids: [1] }, foos: [id: 1, bar: 'bar']
       )
+    end
+  end
+
+  context 'has proc serializer' do
+    let(:b) do
+      f = HasManyTesting::Foo.new
+      f.bar = 'bar'
+      f.id = 1
+
+      b = HasManyTesting::Bar.new
+      b.foos = [f]
+      b.id = 2
+
+      b
+    end
+
+    it do
+      expect(
+        HasManyTesting::BarProcSerializer.new(b, scope: :other).to_hash
+      ).to eq(bar: { id: 2, foo_ids: [1] }, foos: [{ id: 1, bar: 'bar' }])
+    end
+
+    it do
+      expect(
+        HasManyTesting::BarProcSerializer.new(b, scope: :none).to_hash
+      ).to eq(bar: { id: 2, foo_ids: [1] }, foos: [{ id: 1 }])
     end
   end
 

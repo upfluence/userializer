@@ -37,6 +37,10 @@ module HasOneTesting
     has_one :biz
   end
 
+  class BarProcSerializer < USerializer::BaseSerializer
+    has_one :foo, serializer: -> (_, _) { FooNestedSerializer }
+  end
+
   class BarNestedSerializer < USerializer::BaseSerializer
     has_one :foo, serializer: FooNestedSerializer
   end
@@ -115,17 +119,30 @@ RSpec.describe USerializer::BaseSerializer do
   end
 
   context 'nested' do
-    it do
+    let(:n) do
       n = HasOneTesting::Bar.new
       n.id = 2
       n.foo = HasOneTesting::Foo.new
       n.foo.id = 42
       n.foo.biz = HasOneTesting::Biz.new
       n.foo.biz.id = 27
+
+      n
+    end
+
+    it do
       expect(HasOneTesting::BarNestedSerializer.new(n).to_hash).to eq(
-        bar: { id: 2, foo_id: 42 },
-        foos: [id: 42, biz_id: 27],
-        bizs: [id: 27, zaz: 'zaz']
+        bar:  { id: 2, foo_id: 42 },
+        foos: [{ id: 42, biz_id: 27 }],
+        bizs: [{ id: 27, zaz: 'zaz' }]
+      )
+    end
+
+    it do
+      expect(HasOneTesting::BarProcSerializer.new(n).to_hash).to eq(
+        bar:  { id: 2, foo_id: 42 },
+        foos: [{ id: 42, biz_id: 27 }],
+        bizs: [{ id: 27, zaz: 'zaz' }]
       )
     end
   end
