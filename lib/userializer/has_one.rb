@@ -7,7 +7,6 @@ module USerializer
       @root_key = opts[:root]&.to_sym
 
       serializer = opts[:serializer]
-      @serializer = nil
 
       @serializer = if serializer&.is_a?(Proc)
                       @serializer = serializer
