@@ -1,6 +1,7 @@
 require 'userializer/version'
 require 'userializer/base_serializer'
 require 'userializer/array_serializer'
+require 'userializer/composite_serializer'
 
 module USerializer
   NS_SEPARATOR = '::'.freeze

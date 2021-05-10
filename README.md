@@ -167,6 +167,33 @@ different situations:
 }
 ```
 
+### CompositeSerializer
+
+Imagine you have a compound of different data that you want to return to the same payload.
+For example, you have an **array** of a `Foo` class and a `Bar` value to return.
+You can use a `CompositeSerializer` to serialize both.
+
+```ruby
+array_foo = [Foo.new, Foo.new]
+bar = Bar.new
+
+CompositeSerializer.new(
+  { key_foo: array_foo, key_bar: bar },
+  each_serializer: { key_foo: FooCustomSerializer },
+  serializer: { key_bar: BarSerializer },
+  root: { key_foo: :foo_root, key_bar: :bar_root }
+).to_json
+```
+
+this will render:
+
+```json
+{
+  "foo_root": [{... foo1 attributes ...}, {... foo2 attributes ...}],
+  "bar_root": {... bar attributes ...}
+}
+```
+
 ## Development
 
 After checking out the repo, run `bin/setup` to install dependencies. Then, run `rake spec` to run the tests. You can also run `bin/console` for an interactive prompt that will allow you to experiment.
