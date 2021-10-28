@@ -3,7 +3,7 @@ module USerializer
     def initialize(key, opts)
       @key = key
       @opts = opts
-      @id_key = "#{key}_id".to_sym
+      @id_key = opts[:id_key] || "#{key}_id".to_sym
       @root_key = opts[:root]&.to_sym
 
       serializer = opts[:serializer]
