@@ -1,0 +1,25 @@
+name: ci
+
+on:
+  push:
+    branches:
+      - master
+  pull_request:
+
+jobs:
+  test:
+    name: Run Tests
+    runs-on: ubuntu-20.04
+    strategy:
+      matrix:
+        ruby: [2.7, 3.0.3]
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v2
+    - name: Install Ruby
+      uses: ruby/setup-ruby@v1
+      with:
+        ruby-version: ${{ matrix.ruby }}
+        bundler-cache: true
+    - name: Run the Test Suite
+      run: bundle exec rspec --color --require spec_helper --format progress spec
