@@ -112,7 +112,7 @@ module USerializer
     end
 
     def allow?(key)
-      return @only.include?(key) unless @only.empty?
+      return @only.include?(key) if @only.any?
       !@except.include?(key)
     end
   end
