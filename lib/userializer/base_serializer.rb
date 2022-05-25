@@ -45,6 +45,7 @@ module USerializer
       @opts = opts
       @meta = opts[:meta]
       @except = Set.new([opts[:except]].flatten.compact)
+      @only = Set.new([opts[:only]].flatten.compact)
 
       @root_key = (opts[:root] || ActiveSupport::Inflector.underscore(
         obj.class.name
@@ -99,15 +100,20 @@ module USerializer
     private
 
     def attributes
-      @attributes ||= (self.class.attrs || {}).values.reject do |attr|
-        @except.include?(attr.key)
+      @attributes ||= (self.class.attrs || {}).values.select do |attr|
+        allow?(attr.key)
       end
     end
 
     def relations
-      @relations ||= (self.class.relations || {}).values.reject do |rel|
-        @except.include?(rel.key)
+      @relations ||= (self.class.relations || {}).values.select do |rel|
+        allow?(rel.key)
       end
+    end
+
+    def allow?(key)
+      return @only.include?(key) if @only.any?
+      !@except.include?(key)
     end
   end
 end

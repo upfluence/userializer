@@ -86,4 +86,20 @@ RSpec.describe USerializer::BaseSerializer do
       )
     end
   end
+
+  context 'only' do
+    it do
+      expect(FooSerializer.new(f, only: %i[buz]).to_hash).to eq(
+        foo: { buz: 'biz' }
+      )
+    end
+  end
+
+  context 'only && except' do
+    it do
+      expect(FooSerializer.new(
+        f, only: %i[buz], except: %i[buz]
+      ).to_hash).to eq(foo: { buz: 'biz' })
+    end
+  end
 end
