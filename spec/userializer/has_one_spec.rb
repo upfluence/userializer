@@ -33,6 +33,10 @@ module HasOneTesting
     has_one :foo, serializer: FooCustomSerializer, except: :buz
   end
 
+  class BarOnlySerializer < USerializer::BaseSerializer
+    has_one :foo, serializer: FooCustomSerializer, only: :buz
+  end
+
   class FooNestedSerializer < USerializer::BaseSerializer
     has_one :biz
   end
@@ -110,6 +114,14 @@ RSpec.describe USerializer::BaseSerializer do
     it do
       expect(HasOneTesting::BarExceptSerializer.new(b).to_hash).to eq(
         bar: { id: 2, foo_id: 1 }, foos: [id: 1]
+      )
+    end
+  end
+
+  context 'only' do
+    it do
+      expect(HasOneTesting::BarOnlySerializer.new(b).to_hash).to eq(
+        bar: { id: 2, foo_id: 1 }, foos: [buz: 'zzz']
       )
     end
   end
