@@ -24,6 +24,11 @@ class FooSubSerializer < FooSerializer
   has_many :bazs
 end
 
+class FooSkipNilSerializer < USerializer::BaseSerializer
+   attributes :bazs
+   attributes :bar, skip_nil: true
+end
+
 RSpec.describe USerializer::BaseSerializer do
   let(:f) do
     f = Foo.new
@@ -100,6 +105,20 @@ RSpec.describe USerializer::BaseSerializer do
       expect(FooSerializer.new(
         f, only: %i[buz], except: %i[buz]
       ).to_hash).to eq(foo: { buz: 'biz' })
+    end
+  end
+
+  context 'skip nil' do
+    let(:f) do
+      f = Foo.new
+      f.id = 1
+      f
+    end
+
+    it do
+      expect(FooSkipNilSerializer.new(f).to_hash).to eq(
+        foo: { id: 1, bazs: nil }
+      )
     end
   end
 end
