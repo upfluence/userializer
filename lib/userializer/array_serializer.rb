@@ -14,7 +14,7 @@ module USerializer
 
       raise HeterogeneousArray if clss.count > 1
 
-      @root_key = opts[:root]
+      @root_key = opts[:root]&.to_sym
       @root_key ||= ActiveSupport::Inflector.pluralize(
         ActiveSupport::Inflector.underscore(obj_class.name).split('/').last
       ).to_sym if obj_class
