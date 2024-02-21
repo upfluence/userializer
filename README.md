@@ -105,6 +105,31 @@ Way nicer, right?
 Just like AMS, USerializer supports `has_one` and `has_many`
 relationships
 
+### Collection Attributes Filtering
+
+For `has_many` relationships, USerializer allow you to serialize only
+part of the collection that matches some criterias.
+It relies on the ActiveRecord `scope` feature :
+
+```ruby
+class Product < ActiveRecord::Base
+  has_many :variants
+end
+
+class Variant < ActiveRecord::Base
+  belongs_to :product
+
+  scope :available, -> { where(delete_at: nil) }
+end
+
+class ProductSerializer < USerializer::BaseSerializer
+  has_many :variants, scope: :available
+end
+
+class VariantSerializer < USerializer::BaseSerializer
+end
+```
+
 ### Serialized Output
 
 The following outputs will be based an on our `Order` object in
