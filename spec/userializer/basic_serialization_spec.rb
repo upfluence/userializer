@@ -25,8 +25,16 @@ class FooSubSerializer < FooSerializer
 end
 
 class FooSkipNilSerializer < USerializer::BaseSerializer
-   attributes :bazs
-   attributes :bar, skip_nil: true
+  attributes :bazs
+  attributes :bar, skip_nil: true
+end
+
+class AttributesRelations
+  attr_accessor :id, :relations, :attributes
+end
+
+class AttributesRelationsSerializer < USerializer::BaseSerializer
+  attributes :relations, :attributes
 end
 
 RSpec.describe USerializer::BaseSerializer do
@@ -118,6 +126,26 @@ RSpec.describe USerializer::BaseSerializer do
     it do
       expect(FooSkipNilSerializer.new(f).to_hash).to eq(
         foo: { id: 1, bazs: nil }
+      )
+    end
+  end
+
+  context 'attributes && relations' do
+    let(:f) do
+      f = AttributesRelations.new
+      f.id = 1
+      f.attributes = 'foo'
+      f.relations = 'bar'
+      f
+    end
+
+    it do
+      expect(AttributesRelationsSerializer.new(f).to_hash).to eq(
+        attributes_relations: {
+          id:         1,
+          attributes: 'foo',
+          relations:  'bar'
+        }
       )
     end
   end

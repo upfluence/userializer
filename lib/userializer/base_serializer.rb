@@ -55,8 +55,8 @@ module USerializer
     def serializable_hash(opts)
       res = {}
 
-      attributes.each { |attr| attr.merge_attributes(res, self, opts) }
-      relations.each do |rel|
+      _attributes.each { |attr| attr.merge_attributes(res, self, opts) }
+      _relations.each do |rel|
         rel.merge_attributes(res, self, opts)
       end
 
@@ -78,7 +78,7 @@ module USerializer
         end
       end
 
-      relations.each { |rel| rel.merge_root(res, self, opts) }
+      _relations.each { |rel| rel.merge_root(res, self, opts) }
     end
 
     def to_hash
@@ -99,14 +99,14 @@ module USerializer
 
     private
 
-    def attributes
-      @attributes ||= (self.class.attrs || {}).values.select do |attr|
+    def _attributes
+      @_attributes ||= (self.class.attrs || {}).values.select do |attr|
         allow?(attr.key)
       end
     end
 
-    def relations
-      @relations ||= (self.class.relations || {}).values.select do |rel|
+    def _relations
+      @_relations ||= (self.class.relations || {}).values.select do |rel|
         allow?(rel.key)
       end
     end
