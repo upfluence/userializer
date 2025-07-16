@@ -120,4 +120,21 @@ RSpec.describe USerializer::CompositeSerializer do
       )
     end
   end
+
+  context 'with raw hash' do
+    it do
+      expect(
+        USerializer::CompositeSerializer.new(
+          {
+            key: foo,
+            bar: { buz: 'value' }
+          },
+          serializer: { bar: USerializer::RawSerializer }
+        ).to_hash
+      ).to eq(
+        key:  { id: 1, bar: 'bar' },
+        bar: { buz: 'value' }
+      )
+    end
+  end
 end

@@ -61,7 +61,7 @@ module USerializer
       objs.map do |(key, obj)|
         opts = options_for(key)
 
-        if obj.is_a? Enumerable
+        if obj.is_a? Array
           ArraySerializer.new(obj, opts)
         else
           CompositeObject.new(obj, opts)
