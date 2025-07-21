@@ -4,10 +4,11 @@ module USerializer
   class HeterogeneousArray < StandardError; end
 
   class ArraySerializer
-    def initialize(objs, opts = {})
+    def initialize(objs, opts = {}, embed_empty_array: false)
       @objs = objs.compact
       @opts = opts
       @meta = opts[:meta]
+      @embed_empty_array = embed_empty_array
 
       clss = @objs.map(&:class).uniq
       obj_class = clss.first
@@ -29,6 +30,7 @@ module USerializer
     end
 
     def merge_root(res, opts)
+      res[@root_key] ||= [] if @embed_empty_array
       @objs.each do |obj|
         serializer(obj, opts).merge_root(res, @root_key, false, opts)
       end

@@ -73,11 +73,12 @@ RSpec.describe USerializer::CompositeSerializer do
     it do
       expect(
         USerializer::CompositeSerializer.new(
-          { key: foo, key_1: [foo] }
+          { key: foo, key_1: [foo], key_2: [] }
         ).to_hash
       ).to eq(
-        key:  { id: 1, bar: 'bar' },
-        key_1: [{ id: 1, bar: 'bar' }]
+        key:   { id: 1, bar: 'bar' },
+        key_1: [{ id: 1, bar: 'bar' }],
+        key_2: []
       )
     end
 
@@ -132,7 +133,7 @@ RSpec.describe USerializer::CompositeSerializer do
           serializer: { bar: USerializer::RawSerializer }
         ).to_hash
       ).to eq(
-        key:  { id: 1, bar: 'bar' },
+        key: { id: 1, bar: 'bar' },
         bar: { buz: 'value' }
       )
     end
