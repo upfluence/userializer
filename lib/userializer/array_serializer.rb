@@ -11,10 +11,9 @@ module USerializer
       @meta = opts[:meta]
       @embed_empty_array = opts[:embed_empty_array] || false
 
-      clss = @objs.map(&:class).uniq
-      obj_class = clss.first
+      obj_class = @objs.first&.class
 
-      raise HeterogeneousArray if clss.count > 1
+      raise HeterogeneousArray if @objs.any? { |o| !o.instance_of?(obj_class) }
 
       @root_key = opts[:root]&.to_sym
       @root_key ||= USerializer.infered_root_key(obj_class) if obj_class

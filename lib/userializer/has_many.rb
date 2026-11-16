@@ -15,9 +15,10 @@ module USerializer
     def merge_attributes(res, ser, opts)
       return unless allow?(ser, opts)
 
-      res[@ids_key] = (entities(ser) || []).compact.map do |obj|
-        obj.send(@embed_key)
-      end.compact
+      res[@ids_key] = (entities(ser) || []).each_with_object([]) do |obj, ids|
+        id = obj&.send(@embed_key)
+        ids << id unless id.nil?
+      end
     end
 
     def merge_root(res, ser, opts)
