@@ -58,7 +58,13 @@ module USerializer
       return @serializer.call(obj, opts).new(obj, @opts) if @serializer
       return obj.serialize if obj.respond_to?(:serialize)
 
-      USerializer.infered_serializer_class(obj.class).new(obj, @opts)
+      infered_serializer.new(obj, @opts)
+    end
+
+    def infered_serializer
+      @infered_serializer ||= USerializer.infered_serializer_class(
+        @objs.first.class
+      )
     end
   end
 end
