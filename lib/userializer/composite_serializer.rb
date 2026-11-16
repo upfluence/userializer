@@ -65,7 +65,7 @@ module USerializer
         if obj.is_a?(Hash) || !obj.is_a?(Enumerable)
           CompositeObject.new(obj, opts)
         else
-          ArraySerializer.new(obj, opts, embed_empty_array: true)
+          ArraySerializer.new(obj, opts.merge(embed_empty_array: true))
         end
       end
     end

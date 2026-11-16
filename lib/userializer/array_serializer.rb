@@ -5,11 +5,11 @@ module USerializer
   class HeterogeneousArray < StandardError; end
 
   class ArraySerializer
-    def initialize(objs, opts = {}, embed_empty_array: false)
+    def initialize(objs, opts = {})
       @objs = objs.compact
       @opts = opts
       @meta = opts[:meta]
-      @embed_empty_array = embed_empty_array
+      @embed_empty_array = opts[:embed_empty_array] || false
 
       clss = @objs.map(&:class).uniq
       obj_class = clss.first
