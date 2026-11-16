@@ -17,9 +17,11 @@ module USerializer
     def infered_serializer_class(kls)
       return nil if kls.nil?
 
-      (kls.name + 'Serializer').split(NS_SEPARATOR).inject(Object) do |o, c|
-        o.const_get(c)
-      end
+      name = "#{kls.name}Serializer"
+
+      return Object.const_get(name) if Object.const_defined?(name)
+
+      name.split(NS_SEPARATOR).inject(Object) { |o, c| o.const_get(c) }
     end
   end
 end
