@@ -1,4 +1,5 @@
 require 'oj'
+require 'userializer/payload'
 
 module USerializer
   class CompositeObject
@@ -41,10 +42,10 @@ module USerializer
     end
 
     def to_hash
-      res = {}
+      res = Payload.new
 
       merge_root(res, @opts)
-      res
+      res.to_h
     end
 
     def serialize(*_args)

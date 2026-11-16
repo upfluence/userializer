@@ -3,6 +3,7 @@ require 'active_support/inflector/methods'
 require 'userializer/has_one'
 require 'userializer/has_many'
 require 'userializer/attribute'
+require 'userializer/payload'
 
 module USerializer
   class BaseSerializer
@@ -67,28 +68,22 @@ module USerializer
       if single
         res[key] = serializable_hash(opts)
       else
-        res[key] ||= []
+        return if res.include_id?(key, @obj.id)
 
-        id = @obj.id
-
-        if res[key].detect { |v| id && v[:id] == id }
-          return
-        else
-          res[key] << serializable_hash(opts)
-        end
+        res.push(key, serializable_hash(opts))
       end
 
       _relations.each { |rel| rel.merge_root(res, self, opts) }
     end
 
     def to_hash
-      res = {}
+      res = Payload.new
 
       merge_root(res, @root_key, true, @opts.slice(:scope))
 
       res[:meta] = @meta if @meta
 
-      res
+      res.to_h
     end
 
     def to_json

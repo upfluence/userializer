@@ -1,4 +1,5 @@
 require 'oj'
+require 'userializer/payload'
 
 module USerializer
   class HeterogeneousArray < StandardError; end
@@ -37,14 +38,14 @@ module USerializer
     end
 
     def to_hash
-      res = {}
+      res = Payload.new
 
       res[@root_key] = [] if @root_key
 
       merge_root(res, @opts)
       res[:meta] = @meta if @meta
 
-      res
+      res.to_h
     end
 
     def to_json
