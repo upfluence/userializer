@@ -86,6 +86,14 @@ module USerializer
       res.to_h
     end
 
+    def relation_value(key)
+      @_relation_values ||= {}
+
+      return @_relation_values[key] if @_relation_values.key?(key)
+
+      @_relation_values[key] = yield
+    end
+
     def to_json
       Oj.dump(to_hash, mode: :compat)
     end

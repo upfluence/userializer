@@ -23,16 +23,22 @@ module USerializer
     def merge_attributes(res, ser, opts)
       return unless @conditional_block.call(ser.object, opts)
 
-      obj = ser.send(@key)
+      obj = entity(ser)
       res[@id_key] = obj.nil? ? nil : obj.send(@embed_key)
     end
 
     def merge_root(res, ser, opts)
-      obj = ser.send(@key)
+      return unless @conditional_block.call(ser.object, opts)
 
-      return if obj.nil? || !@conditional_block.call(ser.object, opts)
+      obj = entity(ser)
+
+      return if obj.nil?
 
       serializer(obj, opts).merge_root(res, root_key(obj), false, opts)
+    end
+
+    def entity(ser)
+      ser.relation_value(@key) { ser.send(@key) }
     end
 
     private

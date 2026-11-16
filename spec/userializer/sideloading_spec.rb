@@ -42,6 +42,11 @@ module SideloadingTesting
     has_many :tags, scope: :available
     has_one :main_tag, root: :tags
   end
+
+  class PostConditionalSerializer < USerializer::BaseSerializer
+    has_many :tags, if: proc { false }
+    has_one :main_tag, if: proc { false }
+  end
 end
 
 RSpec.describe USerializer::BaseSerializer do
@@ -93,6 +98,30 @@ RSpec.describe USerializer::BaseSerializer do
       expect(
         SideloadingTesting::PostSerializer.new(post).to_hash.class
       ).to eq(Hash)
+    end
+  end
+
+  context 'evaluates the has_many scope once' do
+    it do
+      collection = tags(1, 2)
+      post = SideloadingTesting::Post.new(1, collection)
+
+      SideloadingTesting::PostSerializer.new(post).to_hash
+
+      expect(collection.scope_calls).to eq(1)
+    end
+  end
+
+  context 'does not load relations when the condition is false' do
+    it do
+      post = SideloadingTesting::Post.new(1, nil)
+
+      allow(post).to receive(:tags).and_raise('tags loaded')
+      allow(post).to receive(:main_tag).and_raise('main_tag loaded')
+
+      expect(
+        SideloadingTesting::PostConditionalSerializer.new(post).to_hash
+      ).to eq(post: { id: 1 })
     end
   end
 end
