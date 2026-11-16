@@ -14,7 +14,7 @@ module USerializer
     def merge_attributes(res, ser, opts)
       return unless allow?(ser, opts)
 
-      value = @block ? @block.call(ser.object, opts) : ser.send(@key)
+      value = @block ? @block.call(ser.object, opts) : ser.read_attribute(@key)
 
       return if value.nil? && @skip_nil
 

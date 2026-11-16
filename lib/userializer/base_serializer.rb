@@ -12,6 +12,26 @@ module USerializer
       def inherited(subclass)
         subclass.attrs = self.attrs.dup || { id: Attribute.new(:id, {}, nil) }
         subclass.relations = self.relations.dup || {}
+        subclass.serializer_methods = self.serializer_methods.dup || Set.new
+      end
+
+      # BaseSerializer itself has no registry, so its own methods are never
+      # treated as serializer methods.
+      def method_added(name)
+        super
+        serializer_methods&.add(name)
+      end
+
+      def include(*mods)
+        super
+
+        mods.each do |mod|
+          serializer_methods&.merge(
+            mod.instance_methods + mod.private_instance_methods
+          )
+        end
+
+        self
       end
 
       def attributes(*attrs, &block)
@@ -35,7 +55,7 @@ module USerializer
         attrs.each { |attr| @relations[attr] = HasMany.new(attr, opts) }
       end
 
-      attr_accessor :attrs, :relations
+      attr_accessor :attrs, :relations, :serializer_methods
     end
 
     attr_reader :obj, :meta, :opts
@@ -79,6 +99,12 @@ module USerializer
       res[:meta] = @meta if @meta
 
       res.to_h
+    end
+
+    def read_attribute(key)
+      return send(key) if self.class.serializer_methods.include?(key)
+
+      @obj.send(key)
     end
 
     def relation_value(key)

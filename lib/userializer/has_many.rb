@@ -33,7 +33,7 @@ module USerializer
 
     def entities(ser)
       ser.relation_value(@key) do
-        obj = ser.send(@key) || []
+        obj = ser.read_attribute(@key) || []
 
         @opts[:scope] ? obj.send(@opts[:scope]) : obj
       end

@@ -39,7 +39,7 @@ module USerializer
     end
 
     def entity(ser)
-      ser.relation_value(@key) { ser.send(@key) }
+      ser.relation_value(@key) { ser.read_attribute(@key) }
     end
 
     private
