@@ -5,6 +5,7 @@ module USerializer
       @opts = opts
       @id_key = opts[:id_key] || "#{key}_id".to_sym
       @root_key = opts[:root]&.to_sym
+      @infered_serializers = {}
 
       serializer = opts[:serializer]
 
@@ -51,7 +52,11 @@ module USerializer
       return @serializer.call(obj, opts).new(obj, @opts) if @serializer
       return obj.serialize if obj.respond_to?(:serialize)
 
-      USerializer.infered_serializer_class(obj.class).new(obj, @opts)
+      infered_serializer(obj.class).new(obj, @opts)
+    end
+
+    def infered_serializer(kls)
+      @infered_serializers[kls] ||= USerializer.infered_serializer_class(kls)
     end
 
     def root_key(obj)
