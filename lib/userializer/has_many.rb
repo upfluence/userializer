@@ -9,11 +9,11 @@ module USerializer
       @ids_key = opts[:ids_key] || build_ids_key(key)
 
       @embed_key = opts[:embed_key] || :id
-      @conditional_block = opts[:if] || proc { true }
+      @conditional_block = opts[:if]
     end
 
     def merge_attributes(res, ser, opts)
-      return unless @conditional_block.call(ser.object, opts)
+      return unless allow?(ser, opts)
 
       res[@ids_key] = (entities(ser) || []).compact.map do |obj|
         obj.send(@embed_key)
@@ -21,7 +21,7 @@ module USerializer
     end
 
     def merge_root(res, ser, opts)
-      return unless @conditional_block.call(ser.object, opts)
+      return unless allow?(ser, opts)
 
       objs = entities(ser) || []
 
@@ -39,6 +39,10 @@ module USerializer
     end
 
     private
+
+    def allow?(ser, opts)
+      @conditional_block.nil? || @conditional_block.call(ser.object, opts)
+    end
 
     def build_ids_key(key)
       "#{ActiveSupport::Inflector.singularize(key)}_ids".to_sym

@@ -16,20 +16,20 @@ module USerializer
                     end
 
       @embed_key = opts[:embed_key] || :id
-      @conditional_block = opts[:if] || proc { true }
+      @conditional_block = opts[:if]
     end
 
     attr_reader :id_key, :key
 
     def merge_attributes(res, ser, opts)
-      return unless @conditional_block.call(ser.object, opts)
+      return unless allow?(ser, opts)
 
       obj = entity(ser)
       res[@id_key] = obj.nil? ? nil : obj.send(@embed_key)
     end
 
     def merge_root(res, ser, opts)
-      return unless @conditional_block.call(ser.object, opts)
+      return unless allow?(ser, opts)
 
       obj = entity(ser)
 
@@ -43,6 +43,10 @@ module USerializer
     end
 
     private
+
+    def allow?(ser, opts)
+      @conditional_block.nil? || @conditional_block.call(ser.object, opts)
+    end
 
     def serializer(obj, opts)
       return @serializer.call(obj, opts).new(obj, @opts) if @serializer
