@@ -98,9 +98,11 @@ module USerializer
     private
 
     def _root_key
-      @_root_key ||= (@opts[:root] || ActiveSupport::Inflector.underscore(
-        @obj.class.name
-      ).split('/').last).to_sym
+      @_root_key ||= if @opts[:root]
+                       @opts[:root].to_sym
+                     else
+                       USerializer.infered_singular_root_key(@obj.class)
+                     end
     end
 
     def _attributes

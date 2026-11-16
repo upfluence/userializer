@@ -8,6 +8,7 @@ module USerializer
   NS_SEPARATOR = '::'.freeze
 
   @root_keys = {}
+  @singular_root_keys = {}
 
   class << self
     def serializer_for(obj)
@@ -24,6 +25,14 @@ module USerializer
       return Object.const_get(name) if Object.const_defined?(name)
 
       name.split(NS_SEPARATOR).inject(Object) { |o, c| o.const_get(c) }
+    end
+
+    def infered_singular_root_key(kls)
+      name = kls.name
+
+      @singular_root_keys[name] ||= ActiveSupport::Inflector.underscore(
+        name
+      ).split('/').last.to_sym
     end
 
     def infered_root_key(kls)
