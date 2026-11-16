@@ -108,6 +108,30 @@ RSpec.describe USerializer::BaseSerializer do
     end
   end
 
+  context 'only with a single key' do
+    it do
+      expect(FooSerializer.new(f, only: :bar).to_hash).to eq(
+        foo: { bar: 'bar' }
+      )
+    end
+  end
+
+  context 'only with nested keys' do
+    it do
+      expect(FooSerializer.new(f, only: [:id, [:buz]]).to_hash).to eq(
+        foo: { id: 1, buz: 'biz' }
+      )
+    end
+  end
+
+  context 'empty only && except' do
+    it do
+      expect(FooSerializer.new(f, only: [], except: []).to_hash).to eq(
+        foo: { id: 1, bar: 'bar', buz: 'biz' }
+      )
+    end
+  end
+
   context 'only && except' do
     it do
       expect(FooSerializer.new(

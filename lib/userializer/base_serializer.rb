@@ -45,21 +45,15 @@ module USerializer
       @obj = obj
       @opts = opts
       @meta = opts[:meta]
-      @except = Set.new([opts[:except]].flatten.compact)
-      @only = Set.new([opts[:only]].flatten.compact)
-
-      @root_key = (opts[:root] || ActiveSupport::Inflector.underscore(
-        obj.class.name
-      ).split('/').last).to_sym
+      @except = key_filter(opts[:except])
+      @only = key_filter(opts[:only])
     end
 
     def serializable_hash(opts)
       res = {}
 
-      _attributes.each { |attr| attr.merge_attributes(res, self, opts) }
-      _relations.each do |rel|
-        rel.merge_attributes(res, self, opts)
-      end
+      _attributes { |attr| attr.merge_attributes(res, self, opts) }
+      _relations { |rel| rel.merge_attributes(res, self, opts) }
 
       res
     end
@@ -73,13 +67,13 @@ module USerializer
         res.push(key, serializable_hash(opts))
       end
 
-      _relations.each { |rel| rel.merge_root(res, self, opts) }
+      _relations { |rel| rel.merge_root(res, self, opts) }
     end
 
     def to_hash
       res = Payload.new
 
-      merge_root(res, @root_key, true, @opts.slice(:scope))
+      merge_root(res, _root_key, true, @opts.slice(:scope))
 
       res[:meta] = @meta if @meta
 
@@ -102,20 +96,36 @@ module USerializer
 
     private
 
+    def _root_key
+      @_root_key ||= (@opts[:root] || ActiveSupport::Inflector.underscore(
+        @obj.class.name
+      ).split('/').last).to_sym
+    end
+
     def _attributes
-      @_attributes ||= (self.class.attrs || {}).values.select do |attr|
-        allow?(attr.key)
+      (self.class.attrs || {}).each_value do |attr|
+        yield attr if allow?(attr.key)
       end
     end
 
     def _relations
-      @_relations ||= (self.class.relations || {}).values.select do |rel|
-        allow?(rel.key)
+      (self.class.relations || {}).each_value do |rel|
+        yield rel if allow?(rel.key)
       end
     end
 
+    def key_filter(keys)
+      return if keys.nil?
+
+      keys = [keys].flatten.compact
+
+      Set.new(keys) unless keys.empty?
+    end
+
     def allow?(key)
-      return @only.include?(key) if @only.any?
+      return @only.include?(key) if @only
+      return true unless @except
+
       !@except.include?(key)
     end
   end
