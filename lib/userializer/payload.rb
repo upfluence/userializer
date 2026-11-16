@@ -1,5 +1,3 @@
-require 'set'
-
 module USerializer
   class Payload < Hash
     def []=(key, value)
@@ -10,19 +8,21 @@ module USerializer
     def include_id?(key, id)
       return false unless id
 
-      ids(key).include?(id)
+      ids(key).key?(id)
     end
 
     def push(key, value)
       (self[key] ||= []) << value
-      ids(key) << value[:id]
+      ids(key)[value[:id]] = true
     end
 
     private
 
     def ids(key)
       @ids ||= {}
-      @ids[key] ||= Set.new((self[key] || []).map { |v| v[:id] })
+      @ids[key] ||= (self[key] || []).each_with_object({}) do |v, acc|
+        acc[v[:id]] = true
+      end
     end
   end
 end

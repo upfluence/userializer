@@ -1,3 +1,4 @@
+require 'set'
 require 'oj'
 require 'active_support/inflector/methods'
 require 'userializer/has_one'
