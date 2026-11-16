@@ -5,6 +5,7 @@ module USerializer
       @opts = opts
       @id_key = opts[:id_key] || "#{key}_id".to_sym
       @root_key = opts[:root]&.to_sym
+      @root_keys = {}
 
       serializer = opts[:serializer]
 
@@ -53,8 +54,10 @@ module USerializer
     def root_key(obj)
       return @root_key if @root_key
 
-      ActiveSupport::Inflector.pluralize(
-        ActiveSupport::Inflector.underscore(obj.class.name).split('/').last
+      name = obj.class.name
+
+      @root_keys[name] ||= ActiveSupport::Inflector.pluralize(
+        ActiveSupport::Inflector.underscore(name).split('/').last
       ).to_sym
     end
   end
