@@ -1,4 +1,5 @@
 require 'oj'
+require 'userializer/payload'
 
 module USerializer
   class CompositeObject
@@ -41,10 +42,10 @@ module USerializer
     end
 
     def to_hash
-      res = {}
+      res = Payload.new
 
       merge_root(res, @opts)
-      res
+      res.to_h
     end
 
     def serialize(*_args)
@@ -64,7 +65,7 @@ module USerializer
         if obj.is_a?(Hash) || !obj.is_a?(Enumerable)
           CompositeObject.new(obj, opts)
         else
-          ArraySerializer.new(obj, opts, embed_empty_array: true)
+          ArraySerializer.new(obj, opts.merge(embed_empty_array: true))
         end
       end
     end

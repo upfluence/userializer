@@ -1,24 +1,22 @@
 require 'oj'
+require 'userializer/payload'
 
 module USerializer
   class HeterogeneousArray < StandardError; end
 
   class ArraySerializer
-    def initialize(objs, opts = {}, embed_empty_array: false)
+    def initialize(objs, opts = {})
       @objs = objs.compact
       @opts = opts
       @meta = opts[:meta]
-      @embed_empty_array = embed_empty_array
+      @embed_empty_array = opts[:embed_empty_array] || false
 
-      clss = @objs.map(&:class).uniq
-      obj_class = clss.first
+      obj_class = @objs.first&.class
 
-      raise HeterogeneousArray if clss.count > 1
+      raise HeterogeneousArray if @objs.any? { |o| !o.instance_of?(obj_class) }
 
       @root_key = opts[:root]&.to_sym
-      @root_key ||= ActiveSupport::Inflector.pluralize(
-        ActiveSupport::Inflector.underscore(obj_class.name).split('/').last
-      ).to_sym if obj_class
+      @root_key ||= USerializer.infered_root_key(obj_class) if obj_class
 
       serializer = opts[:each_serializer]
 
@@ -37,14 +35,14 @@ module USerializer
     end
 
     def to_hash
-      res = {}
+      res = Payload.new
 
       res[@root_key] = [] if @root_key
 
       merge_root(res, @opts)
       res[:meta] = @meta if @meta
 
-      res
+      res.to_h
     end
 
     def to_json
@@ -59,7 +57,13 @@ module USerializer
       return @serializer.call(obj, opts).new(obj, @opts) if @serializer
       return obj.serialize if obj.respond_to?(:serialize)
 
-      USerializer.infered_serializer_class(obj.class).new(obj, @opts)
+      infered_serializer.new(obj, @opts)
+    end
+
+    def infered_serializer
+      @infered_serializer ||= USerializer.infered_serializer_class(
+        @objs.first.class
+      )
     end
   end
 end

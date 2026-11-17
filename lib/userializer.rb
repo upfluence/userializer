@@ -7,6 +7,9 @@ require 'userializer/composite_serializer'
 module USerializer
   NS_SEPARATOR = '::'.freeze
 
+  @root_keys = {}
+  @singular_root_keys = {}
+
   class << self
     def serializer_for(obj)
       return nil if obj.nil?
@@ -17,9 +20,27 @@ module USerializer
     def infered_serializer_class(kls)
       return nil if kls.nil?
 
-      (kls.name + 'Serializer').split(NS_SEPARATOR).inject(Object) do |o, c|
-        o.const_get(c)
-      end
+      name = "#{kls.name}Serializer"
+
+      return Object.const_get(name) if Object.const_defined?(name)
+
+      name.split(NS_SEPARATOR).inject(Object) { |o, c| o.const_get(c) }
+    end
+
+    def infered_singular_root_key(kls)
+      name = kls.name
+
+      @singular_root_keys[name] ||= ActiveSupport::Inflector.underscore(
+        name
+      ).split('/').last.to_sym
+    end
+
+    def infered_root_key(kls)
+      name = kls.name
+
+      @root_keys[name] ||= ActiveSupport::Inflector.pluralize(
+        ActiveSupport::Inflector.underscore(name).split('/').last
+      ).to_sym
     end
   end
 end

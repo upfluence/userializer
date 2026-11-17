@@ -5,6 +5,7 @@ module USerializer
       @opts = opts
       @id_key = opts[:id_key] || "#{key}_id".to_sym
       @root_key = opts[:root]&.to_sym
+      @infered_serializers = {}
 
       serializer = opts[:serializer]
 
@@ -15,41 +16,51 @@ module USerializer
                     end
 
       @embed_key = opts[:embed_key] || :id
-      @conditional_block = opts[:if] || proc { true }
+      @conditional_block = opts[:if]
     end
 
     attr_reader :id_key, :key
 
     def merge_attributes(res, ser, opts)
-      return unless @conditional_block.call(ser.object, opts)
+      return unless allow?(ser, opts)
 
-      obj = ser.send(@key)
+      obj = entity(ser)
       res[@id_key] = obj.nil? ? nil : obj.send(@embed_key)
     end
 
     def merge_root(res, ser, opts)
-      obj = ser.send(@key)
+      return unless allow?(ser, opts)
 
-      return if obj.nil? || !@conditional_block.call(ser.object, opts)
+      obj = entity(ser)
+
+      return if obj.nil?
 
       serializer(obj, opts).merge_root(res, root_key(obj), false, opts)
     end
 
+    def entity(ser)
+      ser.relation_value(@key) { ser.read_attribute(@key) }
+    end
+
     private
+
+    def allow?(ser, opts)
+      @conditional_block.nil? || @conditional_block.call(ser.object, opts)
+    end
 
     def serializer(obj, opts)
       return @serializer.call(obj, opts).new(obj, @opts) if @serializer
       return obj.serialize if obj.respond_to?(:serialize)
 
-      USerializer.infered_serializer_class(obj.class).new(obj, @opts)
+      infered_serializer(obj.class).new(obj, @opts)
+    end
+
+    def infered_serializer(kls)
+      @infered_serializers[kls] ||= USerializer.infered_serializer_class(kls)
     end
 
     def root_key(obj)
-      return @root_key if @root_key
-
-      ActiveSupport::Inflector.pluralize(
-        ActiveSupport::Inflector.underscore(obj.class.name).split('/').last
-      ).to_sym
+      @root_key || USerializer.infered_root_key(obj.class)
     end
   end
 end

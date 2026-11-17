@@ -142,6 +142,23 @@ RSpec.describe USerializer::BaseSerializer do
     end
   end
 
+  context 'polymorphic relation' do
+    it do
+      biz = HasOneTesting::Biz.new
+      biz.id = 27
+
+      other = HasOneTesting::Bar.new
+      other.id = 3
+      other.foo = biz
+
+      expect(USerializer::ArraySerializer.new([b, other]).to_hash).to eq(
+        bars: [{ id: 2, foo_id: 1 }, { id: 3, foo_id: 27 }],
+        foos: [{ id: 1, bar: 'bar' }],
+        bizs: [{ id: 27, zaz: 'zaz' }]
+      )
+    end
+  end
+
   context 'nested' do
     let(:n) do
       n = HasOneTesting::Bar.new

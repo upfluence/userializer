@@ -29,6 +29,10 @@ class FooSkipNilSerializer < USerializer::BaseSerializer
   attributes :bar, skip_nil: true
 end
 
+class FooConditionalSerializer < USerializer::BaseSerializer
+  attributes :bar, if: proc { |_, opts| opts[:scope] == :admin }
+end
+
 class AttributesRelations
   attr_accessor :id, :relations, :attributes
 end
@@ -104,6 +108,44 @@ RSpec.describe USerializer::BaseSerializer do
     it do
       expect(FooSerializer.new(f, only: %i[buz]).to_hash).to eq(
         foo: { buz: 'biz' }
+      )
+    end
+  end
+
+  context 'only with a single key' do
+    it do
+      expect(FooSerializer.new(f, only: :bar).to_hash).to eq(
+        foo: { bar: 'bar' }
+      )
+    end
+  end
+
+  context 'only with nested keys' do
+    it do
+      expect(FooSerializer.new(f, only: [:id, [:buz]]).to_hash).to eq(
+        foo: { id: 1, buz: 'biz' }
+      )
+    end
+  end
+
+  context 'empty only && except' do
+    it do
+      expect(FooSerializer.new(f, only: [], except: []).to_hash).to eq(
+        foo: { id: 1, bar: 'bar', buz: 'biz' }
+      )
+    end
+  end
+
+  context 'conditional attribute' do
+    it do
+      expect(FooConditionalSerializer.new(f, scope: :admin).to_hash).to eq(
+        foo: { id: 1, bar: 'bar' }
+      )
+    end
+
+    it do
+      expect(FooConditionalSerializer.new(f, scope: :user).to_hash).to eq(
+        foo: { id: 1 }
       )
     end
   end

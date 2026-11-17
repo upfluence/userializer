@@ -1,8 +1,10 @@
+require 'set'
 require 'oj'
 require 'active_support/inflector/methods'
 require 'userializer/has_one'
 require 'userializer/has_many'
 require 'userializer/attribute'
+require 'userializer/payload'
 
 module USerializer
   class BaseSerializer
@@ -10,6 +12,26 @@ module USerializer
       def inherited(subclass)
         subclass.attrs = self.attrs.dup || { id: Attribute.new(:id, {}, nil) }
         subclass.relations = self.relations.dup || {}
+        subclass.serializer_methods = self.serializer_methods.dup || Set.new
+      end
+
+      # BaseSerializer itself has no registry, so its own methods are never
+      # treated as serializer methods.
+      def method_added(name)
+        super
+        serializer_methods&.add(name)
+      end
+
+      def include(*mods)
+        super
+
+        mods.each do |mod|
+          serializer_methods&.merge(
+            mod.instance_methods + mod.private_instance_methods
+          )
+        end
+
+        self
       end
 
       def attributes(*attrs, &block)
@@ -33,7 +55,7 @@ module USerializer
         attrs.each { |attr| @relations[attr] = HasMany.new(attr, opts) }
       end
 
-      attr_accessor :attrs, :relations
+      attr_accessor :attrs, :relations, :serializer_methods
     end
 
     attr_reader :obj, :meta, :opts
@@ -44,21 +66,15 @@ module USerializer
       @obj = obj
       @opts = opts
       @meta = opts[:meta]
-      @except = Set.new([opts[:except]].flatten.compact)
-      @only = Set.new([opts[:only]].flatten.compact)
-
-      @root_key = (opts[:root] || ActiveSupport::Inflector.underscore(
-        obj.class.name
-      ).split('/').last).to_sym
+      @except = key_filter(opts[:except])
+      @only = key_filter(opts[:only])
     end
 
     def serializable_hash(opts)
       res = {}
 
-      _attributes.each { |attr| attr.merge_attributes(res, self, opts) }
-      _relations.each do |rel|
-        rel.merge_attributes(res, self, opts)
-      end
+      _attributes { |attr| attr.merge_attributes(res, self, opts) }
+      _relations { |rel| rel.merge_attributes(res, self, opts) }
 
       res
     end
@@ -67,28 +83,36 @@ module USerializer
       if single
         res[key] = serializable_hash(opts)
       else
-        res[key] ||= []
+        return if res.include_id?(key, @obj.id)
 
-        id = @obj.id
-
-        if res[key].detect { |v| id && v[:id] == id }
-          return
-        else
-          res[key] << serializable_hash(opts)
-        end
+        res.push(key, serializable_hash(opts))
       end
 
-      _relations.each { |rel| rel.merge_root(res, self, opts) }
+      _relations { |rel| rel.merge_root(res, self, opts) }
     end
 
     def to_hash
-      res = {}
+      res = Payload.new
 
-      merge_root(res, @root_key, true, @opts.slice(:scope))
+      merge_root(res, _root_key, true, @opts.slice(:scope))
 
       res[:meta] = @meta if @meta
 
-      res
+      res.to_h
+    end
+
+    def read_attribute(key)
+      return send(key) if self.class.serializer_methods.include?(key)
+
+      @obj.send(key)
+    end
+
+    def relation_value(key)
+      @_relation_values ||= {}
+
+      return @_relation_values[key] if @_relation_values.key?(key)
+
+      @_relation_values[key] = yield
     end
 
     def to_json
@@ -99,20 +123,38 @@ module USerializer
 
     private
 
+    def _root_key
+      @_root_key ||= if @opts[:root]
+                       @opts[:root].to_sym
+                     else
+                       USerializer.infered_singular_root_key(@obj.class)
+                     end
+    end
+
     def _attributes
-      @_attributes ||= (self.class.attrs || {}).values.select do |attr|
-        allow?(attr.key)
+      (self.class.attrs || {}).each_value do |attr|
+        yield attr if allow?(attr.key)
       end
     end
 
     def _relations
-      @_relations ||= (self.class.relations || {}).values.select do |rel|
-        allow?(rel.key)
+      (self.class.relations || {}).each_value do |rel|
+        yield rel if allow?(rel.key)
       end
     end
 
+    def key_filter(keys)
+      return if keys.nil?
+
+      keys = [keys].flatten.compact
+
+      Set.new(keys) unless keys.empty?
+    end
+
     def allow?(key)
-      return @only.include?(key) if @only.any?
+      return @only.include?(key) if @only
+      return true unless @except
+
       !@except.include?(key)
     end
   end

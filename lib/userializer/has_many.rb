@@ -9,33 +9,41 @@ module USerializer
       @ids_key = opts[:ids_key] || build_ids_key(key)
 
       @embed_key = opts[:embed_key] || :id
-      @conditional_block = opts[:if] || proc { true }
+      @conditional_block = opts[:if]
     end
 
     def merge_attributes(res, ser, opts)
-      return unless @conditional_block.call(ser.object, opts)
+      return unless allow?(ser, opts)
 
-      res[@ids_key] = (entities(ser) || []).compact.map do |obj|
-        obj.nil? ? nil : obj.send(@embed_key)
-      end.compact
+      res[@ids_key] = (entities(ser) || []).each_with_object([]) do |obj, ids|
+        id = obj&.send(@embed_key)
+        ids << id unless id.nil?
+      end
     end
 
     def merge_root(res, ser, opts)
+      return unless allow?(ser, opts)
+
       objs = entities(ser) || []
 
-      return if objs.empty? || !@conditional_block.call(ser.object, opts)
+      return if objs.empty?
 
       ArraySerializer.new(objs, @opts).merge_root(res, opts)
     end
 
     def entities(ser)
-      obj = ser.send(@key) || []
-      return obj unless @opts[:scope]
+      ser.relation_value(@key) do
+        obj = ser.read_attribute(@key) || []
 
-      obj.send(@opts[:scope])
+        @opts[:scope] ? obj.send(@opts[:scope]) : obj
+      end
     end
 
     private
+
+    def allow?(ser, opts)
+      @conditional_block.nil? || @conditional_block.call(ser.object, opts)
+    end
 
     def build_ids_key(key)
       "#{ActiveSupport::Inflector.singularize(key)}_ids".to_sym
