@@ -11,3 +11,20 @@ jobs:
     name: Run Tests
     uses: upfluence/actions/.github/workflows/lib-ruby-test.yml@master
     secrets: inherit
+
+  release:
+    needs: test
+    if: github.ref == 'refs/heads/master'
+    runs-on: ubuntu-24.04
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v6
+      with:
+        fetch-depth: 0
+    - name: Bump version
+      id: bump-version
+      uses: upfluence/actions/bump-version@master
+    - name: Create release
+      uses: upfluence/actions/create-github-release@master
+      with:
+        version: ${{ steps.bump-version.outputs.version }}
